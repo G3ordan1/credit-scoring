@@ -1,8 +1,8 @@
 # Importing libraries
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt, seaborn as sb
-
+import matplotlib.pyplot as plt 
+import seaborn as sns
 from ucimlrepo import fetch_ucirepo 
 
 # fetch dataset 
@@ -33,6 +33,7 @@ ct = ColumnTransformer(
         remainder = 'passthrough')
 
 X = ct.fit_transform(X)
+ct.get_feature_names_out()
 
 # Scaling - Standardization
 from sklearn.preprocessing import StandardScaler
@@ -123,8 +124,27 @@ pred = pd.DataFrame(pred)
 pred.columns = ['Decisions']
 # Visualization of Decision Counts
 plt.Figure(figsize = (8, 8))
-sb.set_style('darkgrid')
-sb.countplot(pred['Decisions'], data = pred, edgecolor = 'black', linewidth=1.5, palette = 'dark')
+sns.set_style('darkgrid')
+sns.countplot(pred['Decisions'], data = pred, edgecolor = 'black', linewidth=1.5, palette = 'dark')
+plt.title('Predicted Credit Approvals')
+plt.xlabel('Approval Decision')
+plt.ylabel('Count')
+plt.show()
+
+# Histogram of the Decision Counts
+pred = list()
+reject_count = approved_count = 0
+for i in range(len(y_pred)):
+    if y_pred[i] == 0:
+        pred.append('Rejections')
+    else:
+        pred.append('Approvals')
+pred = pd.DataFrame(pred)
+pred.columns = ['Decisions']
+# Visualization of Decision Counts
+plt.Figure(figsize = (8, 8))
+sns.set_style('darkgrid')
+sns.countplot(pred['Decisions'], data = pred, edgecolor = 'black', linewidth=1.5, palette = 'dark')
 plt.title('Predicted Credit Approvals')
 plt.xlabel('Approval Decision')
 plt.ylabel('Count')

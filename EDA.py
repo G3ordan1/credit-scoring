@@ -15,7 +15,17 @@ column_trans = ColumnTransformer(
     remainder='drop', verbose_feature_names_out=False)
 
 column_trans.fit(X)
-
 column_trans.get_feature_names_out()
 
 column_trans.transform(X).toarray()
+
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.compose import make_column_selector
+ct = ColumnTransformer([
+      ('scale', StandardScaler(),
+      make_column_selector(dtype_include=np.number)),
+      ('onehot',
+      OneHotEncoder(),
+      make_column_selector(pattern='city', dtype_include=object))])
+ct.fit_transform(X)
