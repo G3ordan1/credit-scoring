@@ -1,109 +1,102 @@
 # Importing libraries
-import math
-from sklearn.model_selection import cross_val_score
-from sklearn.metrics import accuracy_score
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.linear_model import LogisticRegression
+# Standard
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from ucimlrepo import fetch_ucirepo
+import matplotlib.patches as mpatches
 
-# fetch dataset
-statlog_australian_credit_approval = fetch_ucirepo(id=143)
-# data (as pandas dataframes)
-X = statlog_australian_credit_approval.data.features
-y = statlog_australian_credit_approval.data.targets
-dataset = pd.DataFrame.join(X, y)
+# Prepocessing
+from sklearn.preprocessing import StandardScaler, RobustScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.model_selection import train_test_split
 
-X = statlog_australian_credit_approval.data.features.values
-y = np.ravel(y)
-# metadata
-print(statlog_australian_credit_approval.metadata)
+# Models
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import LinearSVC
 
-# variable information
-print(statlog_australian_credit_approval.variables)
+# Performance evaluation
+from sklearn.model_selection import cross_val_score, StratifiedKFold
+from sklearn.metrics import accuracy_score, roc_curve, roc_auc_score, confusion_matrix
 
-# Importing the dataset
-# dataset = pd.read_csv('credit_approval.csv')
-# X = dataset.iloc[:, :-1].values
-# y = dataset.iloc[:, -1].values
 
-# One Hot Encoding the columns: 3, 4, 5, 11
+# Load dataset
+dataset = pd.read_csv("datasets/australian_credit.csv")
+X = dataset.iloc[:, :-1]
+y = np.ravel(dataset.iloc[:, -1])
 
+# Visualizing class imbalance
+default_count = non_default_count = 0
+for i in range(len(y)):
+    if y[i] == 0:
+        non_default_count += 1
+    else:
+        default_count += 1
+
+plt.Figure(figsize=(8, 8))
+sns.set_style('darkgrid')
+sns.barplot(x=['Non Default', 'Default'], y=[default_count, non_default_count],
+            edgecolor='black', linewidth=1.5, hue=['Non Default', 'Default'])
+plt.title('Defaults vs Non-Defaults')
+plt.xlabel('Class')
+plt.ylabel('Count')
+plt.show()
+
+# Looking for categorical and binary variables
+for i in range(14):
+    x = pd.DataFrame(X).iloc[:, i].unique()
+    if len(x) < 15:
+        print(x, i)
+
+# Encode categorical columns which are not binary
 ct = ColumnTransformer(
-    transformers=[('one_hot_encoder', OneHotEncoder(
-        categories='auto'), [3, 4, 5, 11])],
-    remainder='passthrough')
-
-X = ct.fit_transform(X)
-ct.get_feature_names_out()
-
-# Scaling - Standardization
-sc = StandardScaler()
-X = sc.fit_transform(X)
-# Splitting dataset into train & test subsets
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=0
+    [('standardscaler', StandardScaler(), [1]),
+     ("robustscaler", RobustScaler(), [2, 6, 9, 12, 13]),
+     ("one_hot_encoder", OneHotEncoder(categories="auto"), [3, 4, 5, 11])],
+    remainder='passthrough'
 )
+X = pd.DataFrame(ct.fit_transform(X))
+X.columns = [f"A{i}" for i in range(1, 39)]
+# Remove outliers
+X_main = X.query('A1 < 3.1 & A3 < 10 & A4 < 10 & A5 < 7.5 & A6 < 200')
 
-# Logistic Regression
+# Comparing boxplots of the data with and without outliers
+fig, ax = plt.subplots(nrows=3, ncols=2)
+for fig, cnt in zip(ax.ravel(), range(6)):
+    fig.boxplot(X.iloc[:, cnt], vert=False)
 
-logfit = LogisticRegression(penalty=None, solver="newton-cg")
-logfit.fit(X_train, y_train)
-log_pred = logfit.predict(X_test)
-log_acc = accuracy_score(y_test, log_pred)
+fig, ax = plt.subplots(nrows=3, ncols=2)
+for fig, cnt in zip(ax.ravel(), range(6)):
+    fig.boxplot(X_main.iloc[:, cnt], vert=False)
 
-# Building the Decision Tree Classifier model
-classifier = RandomForestClassifier(n_estimators=170, random_state=0)
-classifier.fit(X_train, y_train)
-
-# Predictions
-y_pred = classifier.predict(X_test)
-
-# Accuracy
-accuracy = accuracy_score(y_test, y_pred)
-
-# K-Fold Cross Validation
-accuracies = cross_val_score(estimator=classifier, X=X_train, y=y_train, cv=10)
-
-print("\nMean of the Accuracies after cross-validation: ", accuracies.mean())
-print("\nStandard Deviation within the accuracies: ", accuracies.std())
-
-print('\nAccuracy: ', accuracy)
-
-X = statlog_australian_credit_approval.data.features.values
-# Histograms for eaach of the columns
-feature_dict = {i: label for i, label in zip(range(14), dataset.columns)}
-
-label_dict = {0: 'Rejected', 1: 'Approved'}
+# Histogram of the data
+label_dict = {0: "Non Default", 1: "Default"}
+feature_dict = {i: feature for i, feature in zip(range(24), dataset.columns)}
 
 fig, axes = plt.subplots(nrows=7, ncols=2, figsize=(10, 10))
-
+fig.subplots_adjust(hspace=2.2)
 for ax, cnt in zip(axes.ravel(), range(14)):
-    # set bin sizes
-    min_b = math.floor(np.min(X[:, cnt]))
-    max_b = math.ceil(np.max(X[:, cnt]))
+    min_b = np.min(dataset.iloc[:, cnt])
+    max_b = np.max(dataset.iloc[:, cnt])
     bins = np.linspace(min_b, max_b, 25)
-    # plotting the histograms
+
     for lab, col in zip(range(2), ('red', 'blue')):
-        ax.hist(X[y == lab, cnt],
+        ax.hist(X.loc[y == lab, feature_dict[cnt]],
                 color=col,
-                label='class %s' % label_dict[lab],
+                label=f"Class {label_dict[lab]}",
                 bins=bins,
-                alpha=0.5)
+                alpha=0.6
+                )
     ylims = ax.get_ylim()
-    # plot annotation
-    leg = ax.legend(loc='upper right', fancybox=True, fontsize=8)
-    leg.get_frame().set_alpha(0.5)
-    ax.set_ylim([0, max(ylims)+2])
+    ax.set_ylim([0, max(ylims) + 2])
     ax.set_xlabel(feature_dict[cnt])
-    ax.set_title('Credit histogram #%s' % str(cnt+1))
+    ax.set_title("")
     # hide axis ticks
     ax.tick_params(axis="both", which="both", bottom="off", top="off",
                    labelbottom="on", left="off", right="off",
@@ -114,47 +107,63 @@ for ax, cnt in zip(axes.ravel(), range(14)):
     ax.spines["bottom"].set_visible(False)
     ax.spines["left"].set_visible(False)
 
-axes[0][0].set_ylabel('count')
-axes[1][0].set_ylabel('count')
+red_patch = mpatches.Patch(color='red', label='Rejected', alpha=0.6)
+blue_patch = mpatches.Patch(color='blue', label='Approved', alpha=0.6)
 
-fig.tight_layout()
+fig.legend(handles=[red_patch, blue_patch], loc='center right',
+           bbox_to_anchor=(1.1, 0.5), fancybox=True, fontsize=6)
+fig.suptitle("Histogram of Features")
 plt.show()
 
-pred = list()
-reject_count = approved_count = 0
-for i in range(len(y_pred)):
-    if y_pred[i] == 0:
-        pred.append('Rejections')
-    else:
-        pred.append('Approvals')
-pred = pd.DataFrame(pred)
-pred.columns = ['Decisions']
-# Visualization of Decision Counts
-plt.Figure(figsize=(8, 8))
-sns.set_style('darkgrid')
-sns.countplot(x=pred['Decisions'],
-              edgecolor='black', linewidth=1.5, palette='dark')
-plt.title('Predicted Credit Approvals')
-plt.xlabel('Approval Decision')
-plt.ylabel('Count')
+# Splitting dataset into train & test subsets
+X_train, X_test, y_train, y_test = train_test_split(
+    X_main, y[X_main.index], test_size=0.2, random_state=0
+)
+
+# Check distribution of the data without outliers
+outliers = dataset.loc[X.index.difference(X_main.index), :].iloc[:, [
+    1, 2, 6, 9, 12, 13]]
+dataset.loc[X_main.index, :].describe(include="all")
+
+print(f"Percentage of data remaining: {len(X_main) / len(X) * 100}%")  # 98.26%
+
+fits = [LogisticRegression(penalty=None, solver="newton-cg"), 
+        LinearDiscriminantAnalysis(), 
+        KNeighborsClassifier(n_neighbors=7), 
+        MLPClassifier(max_iter=1000), 
+        RandomForestClassifier(),
+        DecisionTreeClassifier(), 
+        LinearSVC(dual="auto", max_iter=1000)]
+
+accuracy_scores_test = []
+accuracy_scores_train = []
+cross_val_scores = []
+
+skf = StratifiedKFold(n_splits=2, shuffle=True, random_state=0)
+
+
+for i, fit in enumerate(fits):
+    fit.fit(X_train, y_train)
+    accuracy_scores_test.append(accuracy_score(y_test, fit.predict(X_test)))
+    accuracy_scores_train.append(accuracy_score(y_train, fit.predict(X_train)))
+    cross_val_scores.append(cross_val_score(fit, X, y, cv=skf).mean())
+    if i < 5:
+        y_pred_proba = fit.predict_proba(X_test)[:, 1]
+        fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
+        auc_score = roc_auc_score(y_test, y_pred_proba)
+        plt.plot(fpr, tpr, label=f"{fit} AUC: {auc_score:.2f}")
+
+plt.legend(loc='best', bbox_to_anchor=(1.0, 0.9))
+plt.title("ROC curve for all models")
+plt.ylabel('True Positive Rate')
+plt.xlabel('False Positive Rate')
 plt.show()
 
-# Histogram of the Decision Counts
-pred = list()
-reject_count = approved_count = 0
-for i in range(len(y_pred)):
-    if y_pred[i] == 0:
-        pred.append('Rejections')
-    else:
-        pred.append('Approvals')
-pred = pd.DataFrame(pred)
-pred.columns = ['Decisions']
-# Visualization of Decision Counts
-plt.Figure(figsize=(8, 8))
-sns.set_style('darkgrid')
-sns.countplot(pred['Decisions'], data=pred,
-              edgecolor='black', linewidth=1.5, palette='dark')
-plt.title('Predicted Credit Approvals')
-plt.xlabel('Approval Decision')
-plt.ylabel('Count')
-plt.show()
+accuracy_df = pd.DataFrame(
+    {"test": accuracy_scores_test,
+     "train": accuracy_scores_train,
+      "cross_val": cross_val_scores}, index=[str(fit) for fit in fits]
+      )
+
+accuracy_df.to_csv("accuracy_scores.csv")
+
