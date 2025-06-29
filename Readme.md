@@ -50,3 +50,7 @@ Random Forest consistently outperformed others, offering strong accuracy, robust
 3. **Taiwan Credit Card** (UCI Repository)
 4. **Give Me Some Credit** (Kaggle: https://www.kaggle.com/c/GiveMeSomeCredit)
 
+## 📄 License
+
+This project is licensed under the [Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/).
+You are free to copy, distribute, and build upon the material for non-commercial purposes, as long as appropriate credit is given. Please do not submit this work as your own academic submission.
