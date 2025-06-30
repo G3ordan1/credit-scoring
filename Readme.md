@@ -36,10 +36,9 @@ Random Forest consistently outperformed others, offering strong accuracy, robust
 
 ## 📁 Structure
 ├── main.pdf                   # Final dissertation (A-grade, proudly LaTeX'd)  
-├── notebooks/  
-│   ├── Eda.ipynb           # Exploratory Data Analysis  
-│   ├── Tuning.ipynb        # Hyperparameter tuning with RandomizedSearchCV  
-│   └── final_test.ipynb    # Final model evaluation with cross-validation  
+├── Eda.ipynb           # Exploratory Data Analysis  
+├── Tuning.ipynb        # Hyperparameter tuning with RandomizedSearchCV  
+├── final_test.ipynb    # Final model evaluation with cross-validation  
 ├── datasets/                  
 ├── README.md
 
