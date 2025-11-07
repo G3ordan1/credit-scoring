@@ -35,11 +35,11 @@ Random Forest consistently outperformed others, offering strong accuracy, robust
 - matplotlib 3.8.4
 
 ## 📁 Structure
-├── main.pdf                   # Final dissertation (A-grade, proudly LaTeX'd)
-├── EDA.ipynb           # Exploratory Data Analysis
-├── Tuning.ipynb        # Hyperparameter tuning with RandomizedSearchCV
-├── final_test.ipynb    # Final model evaluation with cross-validation
-├── datasets/
+├── main.pdf                   # Final dissertation (A-grade, proudly LaTeX'd)  
+├── EDA.ipynb           # Exploratory Data Analysis  
+├── Tuning.ipynb        # Hyperparameter tuning with RandomizedSearchCV  
+├── final_test.ipynb    # Final model evaluation with cross-validation  
+├── datasets/  
 ├── README.md
 
 ## 📚 Datasets
